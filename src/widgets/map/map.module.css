@@ -1,0 +1,34 @@
+.container {
+    display: grid;
+    grid-template-columns: 350px 1fr; /* левая колонка - фикс. ширина, правая — всё остальное */
+    grid-template-rows: auto 1fr; /* первая строка по высоте контента, вторая — оставшаяся */
+    grid-template-areas:
+        'info info'
+        'act map';
+    height: 100vh; /* важный момент — растягиваем контейнер на весь экран */
+}
+
+.infoPlate {
+    grid-area: info;
+    background-color: var(--block);
+
+    min-height: 64px;
+    box-sizing: border-box;
+}
+
+.actions {
+    grid-area: act;
+    background-color: var(--block);
+    padding: 12px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.map {
+    grid-area: map;
+    height: 100%;
+}
+
+.aspects {
+    display: none; /* или удалить, если не используете */
+}

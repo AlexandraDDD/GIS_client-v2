@@ -1,0 +1,12 @@
+.page {
+    display: flex;
+    justify-content: center;
+
+    min-width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+
+    background: var(--surface) url('./pattern.png');
+    background-size: contain;
+    background-attachment: fixed;
+}

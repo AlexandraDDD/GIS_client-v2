@@ -1,0 +1,22 @@
+.box {
+    font-size: 14px;
+
+    color: #888;
+}
+
+.box.black {
+    color: unset;
+}
+
+.copy {
+    color: gray;
+    margin-left: 8px;
+
+    width: 12px;
+    height: 12px;
+}
+
+.copy:hover {
+    cursor: pointer;
+    color: black;
+}

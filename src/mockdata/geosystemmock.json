@@ -1,0 +1,127 @@
+{
+    "id": "35545d45-284a-46ed-9bd5-33d8d30c78aa",
+    "name": "Русский музей",
+    "nameVariants": null,
+    "description": "",
+    "rank": 0,
+    "altGeoSystems": null,
+    "type": {
+        "name": "",
+        "description": "",
+        "geoNamesFeatureCode": ""
+    },
+    "geometry": {
+        "id": "7a1feeb3-ab64-49f7-e04e-08ddbf075a32",
+        "coordinateReferenceSystem": "",
+        "border": "[[59.93928310307478,30.33021903103389], [59.93818488151949,30.329714775739205], [59.93818488151949,30.329714775739205], [59.93896073895123,30.33328760872327]]",
+        "boundingBox": "",
+        "center": "",
+        "defaultContentInGeoJSON": "",
+        "geoJsonStyle": "",
+        "gooJsonStyleType": "",
+        "altGeoContents": []
+    },
+    "aspects": [],
+    "created": "0001-01-01T00:00:00",
+    "updated": "0001-01-01T00:00:00",
+    "classifierCodes": [],
+    "previousNames": null,
+    "proxyGeoSystemDtos": [
+        {
+            "id": "6432d378-637d-4a0e-a05f-0bec58b8cdef",
+            "name": "Корпус Бенуа",
+            "nameVariants": null,
+            "description": "",
+            "rank": 0,
+            "altGeoSystems": null,
+            "type": {
+                "name": "",
+                "description": "",
+                "geoNamesFeatureCode": ""
+            },
+            "geometry": {
+                "id": "bbc9b1ff-fcd8-40d7-e04f-08ddbf075a32",
+                "coordinateReferenceSystem": "",
+                "border": "[[59.939167479042666,30.328304140356614], [59.93837611426619,30.327917902258356], [59.93817154088347,30.329559414175478], [59.93817154088347,30.329559414175478]]",
+                "boundingBox": "",
+                "center": "",
+                "defaultContentInGeoJSON": "",
+                "geoJsonStyle": "",
+                "gooJsonStyleType": "",
+                "altGeoContents": []
+            },
+            "aspects": [],
+            "created": "0001-01-01T00:00:00",
+            "updated": "0001-01-01T00:00:00",
+            "borderWithGeoSystem": null,
+            "spatialPredicate": 0,
+            "relationships": [],
+            "proxyRank": 0,
+            "aspectName": ""
+        },
+        {
+            "id": "8aa919e6-189d-4478-8226-8f0434d7c5c6",
+            "name": "Площадь Искусств ",
+            "nameVariants": null,
+            "description": "",
+            "rank": 0,
+            "altGeoSystems": null,
+            "type": {
+                "name": "",
+                "description": "",
+                "geoNamesFeatureCode": ""
+            },
+            "geometry": {
+                "id": "5c75a382-0691-4892-e050-08ddbf075a32",
+                "coordinateReferenceSystem": "",
+                "border": "[[59.93803032579165,30.329846639579774], [59.936934754383174,30.329353113120963], [59.93649050899308,30.333343980853762], [59.93756797681838,30.33388847011176]]",
+                "boundingBox": "",
+                "center": "",
+                "defaultContentInGeoJSON": "",
+                "geoJsonStyle": "",
+                "gooJsonStyleType": "",
+                "altGeoContents": []
+            },
+            "aspects": [],
+            "created": "0001-01-01T00:00:00",
+            "updated": "0001-01-01T00:00:00",
+            "borderWithGeoSystem": null,
+            "spatialPredicate": 0,
+            "relationships": [],
+            "proxyRank": 0,
+            "aspectName": ""
+        },
+        {
+            "id": "7e2bd128-5f29-427a-9bc2-f2ac9068b9d2",
+            "name": "Михайловский сад",
+            "nameVariants": null,
+            "description": "",
+            "rank": 0,
+            "altGeoSystems": null,
+            "type": {
+                "name": "",
+                "description": "",
+                "geoNamesFeatureCode": ""
+            },
+            "geometry": {
+                "id": "eb5c07fc-9887-42f1-e051-08ddbf075a32",
+                "coordinateReferenceSystem": "",
+                "border": "[[59.94121625981974,30.330406255784098], [59.93932137720996,30.329526491227185], [59.93883687265075,30.336221284928275], [59.94074254938224,30.335320062699385]]",
+                "boundingBox": "",
+                "center": "",
+                "defaultContentInGeoJSON": "",
+                "geoJsonStyle": "",
+                "gooJsonStyleType": "",
+                "altGeoContents": []
+            },
+            "aspects": [],
+            "created": "0001-01-01T00:00:00",
+            "updated": "0001-01-01T00:00:00",
+            "borderWithGeoSystem": null,
+            "spatialPredicate": 0,
+            "relationships": [],
+            "proxyRank": 0,
+            "aspectName": ""
+        }
+    ]
+}

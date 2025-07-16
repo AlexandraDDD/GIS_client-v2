@@ -1,0 +1,21 @@
+{
+    "id": "/",
+    "short_name": "GISSPBGUT",
+    "name": "GISSPBGUT",
+    "icons": [
+        {
+            "src": "logo.svg",
+            "sizes": "any",
+            "purpose": "maskable"
+        },
+        {
+            "src": "logo.svg",
+            "sizes": "any",
+            "purpose": "any"
+        }
+    ],
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
+}

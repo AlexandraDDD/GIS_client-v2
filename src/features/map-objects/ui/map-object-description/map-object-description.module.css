@@ -1,0 +1,49 @@
+.title {
+    margin-bottom: 4px;
+}
+
+.spoiler {
+    margin-top: 12px;
+}
+
+.spoilerList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.class {
+    border: 1px solid var(--border);
+    background-color: var(--block);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.classInfo {
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+.btn {
+    margin-top: 12px;
+    white-space: normal !important;
+}
+
+.noObject {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: #4141419f;
+    padding: 5px;
+    border: 1px solid #41414156;
+    border-radius: 12px;
+}
+
+.endPoint {
+    margin-top: 8px;
+}
+
+.aspectInfo {
+    font-size: 14px;
+    color: #888;
+}

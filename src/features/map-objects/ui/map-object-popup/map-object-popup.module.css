@@ -1,0 +1,25 @@
+.title {
+    min-width: 200px;
+    margin-bottom: 4px;
+}
+
+.content {
+    margin-top: 12px;
+    font-size: 16px;
+}
+
+.aspect {
+    margin-top: 8px;
+}
+
+.bottom {
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+}
+
+.textBlock {
+    display: flex;
+    flex-direction: column;
+    margin: 8px 0;
+}

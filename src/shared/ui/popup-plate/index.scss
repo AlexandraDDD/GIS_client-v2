@@ -1,0 +1,108 @@
+.popup-plate {
+    padding: 16px;
+    border-radius: 12px;
+
+    &_color_gray {
+        background-color: var(--block);
+    }
+
+    &_color_white {
+        background-color: var(--subblock);
+    }
+
+    &__controls {
+        display: flex;
+        align-items: center;
+    }
+
+    &__title {
+        margin-left: 16px;
+
+        font-size: 18px;
+        line-height: 18px;
+        font-weight: 500;
+
+        color: #888888;
+    }
+
+    &__expand-button {
+        display: none;
+
+        margin-left: auto;
+
+        transition: transform 100ms ease-in-out;
+        transform: rotate(180deg);
+
+        &_expanded {
+            transform: rotate(0deg);
+        }
+    }
+
+    &__status-badge::before {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        width: 24px;
+        height: 24px;
+
+        border-radius: 6px;
+    }
+
+    &__content {
+        margin-top: 24px;
+    }
+
+    &_status_active,
+    &_status_finish-stantion {
+        .popup-plate {
+            &__controls {
+                cursor: pointer;
+            }
+
+            &__title {
+                color: #111;
+            }
+
+            &__expand-button {
+                display: block;
+            }
+
+            &__status-badge::before {
+                content: attr(data-numberic);
+
+                background-color: #6bbaff;
+
+                font-family: SFProRounded, sans-serif;
+                font-weight: 700;
+                font-size: 16px;
+
+                color: var(--block);
+            }
+        }
+    }
+
+    &_status_finish-stantion {
+        .popup-plate__status-badge::before {
+            content: url('./finish-stantion.svg');
+
+            background-color: #6bbaff;
+        }
+    }
+
+    &_status_finished {
+        .popup-plate__status-badge::before {
+            content: url('./finished.svg');
+
+            background-color: #92cf4a;
+        }
+    }
+
+    &_status_locked {
+        .popup-plate__status-badge::before {
+            content: url('./locked.svg');
+
+            background-color: #888888;
+        }
+    }
+}
