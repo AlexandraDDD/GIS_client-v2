@@ -38,9 +38,9 @@
         "web-vitals": "^2.1.4"
     },
     "scripts": {
-        "start": "concurrently \"npm run start:client\" \"cd fastify-server && npm run start\"",
+        "start": "npm run start:client",
         "start:client": "react-scripts start",
-        "deps": "npm i && cd fastify-server && npm i",
+        "deps": "npm i",
         "build": "react-scripts build"
     },
     "browserslist": {
