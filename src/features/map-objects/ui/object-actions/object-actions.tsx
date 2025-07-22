@@ -3,12 +3,19 @@ import { useUnit } from 'effector-react';
 import { Button } from '../../../../shared/ui/button';
 
 import { MapObjectDescription } from '../map-object-description/map-object-description';
-import { GeoObject, getGeometry } from '../../../../entities/geoobject';
+import {
+    GeoObject,
+    geoObjectModel,
+    getGeometry,
+} from '../../../../entities/geoobject';
 import styles from './object-actions.module.css';
 import { mapObjectsModel } from '../../lib/map-objects.model';
 import { mapModel } from '../../../../entities/map';
 import { editorModel } from '../../../map-editor/lib/editor.model';
-import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
+import {
+    GeoObjectGeometryPatch,
+    ProxyGeoSystemSummary,
+} from '../../../../entities/geoobject/model/types';
 import { isProxyGeoSystem } from '../../../../utils/IsProxyGeosystem';
 import { toast } from 'react-toastify';
 
@@ -99,6 +106,21 @@ export const MapObjectItem: React.FC<MapObjectItemProps> = ({ geoObject }) => {
         // Здесь потом будет запрос на сервер
         console.log('Сохраняем геометрию:', editedGeometry);
 
+        const coords = JSON.stringify(editedGeometry.coordinates);
+        if (!editedGeometry.coordinates.length) {
+            toast('Геометрия пуста', { type: 'error' });
+            return;
+        }
+
+        const GeoSystemGeometryPathBody: GeoObjectGeometryPatch = {
+            id: geoObject.id,
+            geometry: {
+                ...geoObject.geometry,
+                border: coords,
+            },
+        };
+
+        geoObjectModel.patchGeoSystemGeometryFx(GeoSystemGeometryPathBody);
         // После успешного сохранения:
         mapModel.resetEditedGeometry();
         mapModel.toggleGeometryEditMode();

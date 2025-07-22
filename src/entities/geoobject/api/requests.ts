@@ -1,5 +1,9 @@
-import { get } from '../../../shared/lib/fetch';
-import type { GeoObject } from '../model/types';
+import { get, patch } from '../../../shared/lib/fetch';
+import type {
+    GeometryGeoJSON,
+    GeoObject,
+    GeoObjectGeometryPatch,
+} from '../model/types';
 import mockGeoObject from '../../../mockdata/geosystemmock.json';
 
 export const getDeafaultGeoObjectRequest = async () => {
@@ -8,7 +12,19 @@ export const getDeafaultGeoObjectRequest = async () => {
     );
     return data;
 };
+
 //запрос за моковыми данными
 export const getGeoObjectsMockRequest = async (): Promise<GeoObject> => {
     return mockGeoObject;
+};
+
+// ИЗМЕНЕНИЕ
+
+export const patchGeoSystemGeometry = async (
+    geoObject: GeoObjectGeometryPatch,
+) => {
+    const data = await patch<GeoObject>(`/api/GeoSystem/${geoObject.id}`, {
+        body: geoObject,
+    });
+    return data;
 };

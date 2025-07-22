@@ -9,9 +9,13 @@ export interface Settings {
     query?: object;
 }
 
-type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-export function request<RETURNS>(path: string, method: Method, settings?: Settings): Promise<RETURNS> {
+export function request<RETURNS>(
+    path: string,
+    method: Method,
+    settings?: Settings,
+): Promise<RETURNS> {
     const domain = settings?.domain ?? defaultDomain;
 
     const query = settings?.query ? '?' + qs.stringify(settings.query) : '';
@@ -23,15 +27,17 @@ export function request<RETURNS>(path: string, method: Method, settings?: Settin
           }
         : undefined;
 
-    return fetch(`${domain}${path}${query}`, { method, body, headers }).then((response) => {
-        if (!response.ok) {
-            throw new Error(response.statusText);
-        }
-        if (method === 'DELETE') {
-            return;
-        }
-        if (response.statusText !== 'No Content') {
-            return response.json();
-        }
-    });
+    return fetch(`${domain}${path}${query}`, { method, body, headers }).then(
+        (response) => {
+            if (!response.ok) {
+                throw new Error(response.statusText);
+            }
+            if (method === 'DELETE') {
+                return;
+            }
+            if (response.statusText !== 'No Content') {
+                return response.json();
+            }
+        },
+    );
 }

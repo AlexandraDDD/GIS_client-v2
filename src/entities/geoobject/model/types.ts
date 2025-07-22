@@ -47,7 +47,7 @@ export interface GeoObject extends DraftGeoObject {
 
 //ДОБАВИТЬ GEOJSON ПОСЛЕ ИСПРАВЛЕНИЯ СЕРВЕРА
 export interface Geometry {
-    coordinateReferenceSystem: string;
+    coordinateReferenceSystem?: string;
     border: string;
 
     boundingBox?: string;
@@ -129,6 +129,11 @@ export type GeometryGeoJSON =
           coordinates: LatLngTuple[][][];
           // [ [ [внешний + внутренние] ], [ [внешний + внутренние] ], ... ]
       };
+
+export interface GeoObjectGeometryPatch {
+    id: string;
+    geometry: Geometry;
+}
 /*     | {
           type: 'MultiPolyline';
           coordinates: LatLngTuple[][];
