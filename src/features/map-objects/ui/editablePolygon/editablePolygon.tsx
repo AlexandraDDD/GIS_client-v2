@@ -1,9 +1,15 @@
 import { Polygon, Marker, useMapEvent, useMap } from 'react-leaflet';
-import L, { LatLng, LatLngTuple } from 'leaflet';
+import L, { LatLng, LatLngTuple, LeafletMouseEvent } from 'leaflet';
 import { GeometryGeoJSON, GeoObject } from '../../../../entities/geoobject';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
 import { toast } from 'react-toastify';
+
+import {
+    insertPointIntoRing,
+    closePolygonRing,
+    areHolesInsideOuterRing,
+} from '../../../../utils/geometryUtils';
 
 interface Props {
     geoObject: GeoObject | ProxyGeoSystemSummary;
@@ -16,15 +22,18 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
         geometry.coordinates as LatLngTuple[][],
     );
 
+    const allowUpdate = useRef(true);
     const map = useMap();
-
-    // Добавляем точку по клику на полигон во alt + click внутренний либо внешний click
+    const warningTimeout = useRef<NodeJS.Timeout | null>(null);
 
     useMapEvent('click', (e) => {
         const latlng = e.latlng;
-        const clickPoint = map.latLngToLayerPoint(latlng);
 
-        // Ctrl + Click → создать новое внутреннее кольцо
+        if (!allowUpdate.current) {
+            allowUpdate.current = true;
+            return;
+        }
+
         if (e.originalEvent.ctrlKey) {
             const newHole: LatLngTuple[] = [
                 [latlng.lat, latlng.lng],
@@ -37,26 +46,27 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             return;
         }
 
-        // Alt + Click → вставить в ближайший внутренний контур
         if (e.originalEvent.altKey && positions.length > 1) {
             let bestRingIndex = 1;
             let minDist = Infinity;
             let insertIndex = 0;
+            const clickPoint = map.latLngToLayerPoint(latlng);
 
             for (let ringIndex = 1; ringIndex < positions.length; ringIndex++) {
                 const ring = positions[ringIndex];
 
                 for (let i = 0; i < ring.length; i++) {
-                    const currLatLng = L.latLng(ring[i]);
-                    const nextLatLng = L.latLng(ring[(i + 1) % ring.length]);
-
-                    const currPoint = map.latLngToLayerPoint(currLatLng);
-                    const nextPoint = map.latLngToLayerPoint(nextLatLng);
+                    const currLatLng = map.latLngToLayerPoint(
+                        L.latLng(ring[i]),
+                    );
+                    const nextLatLng = map.latLngToLayerPoint(
+                        L.latLng(ring[(i + 1) % ring.length]),
+                    );
 
                     const dist = L.LineUtil.pointToSegmentDistance(
                         clickPoint,
-                        currPoint,
-                        nextPoint,
+                        currLatLng,
+                        nextLatLng,
                     );
 
                     if (dist < minDist) {
@@ -77,40 +87,121 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             return;
         }
 
-        // Default: вставить точку в внешний контур (positions[0])
-        const outerRing = positions[0];
-        if (!outerRing || outerRing.length < 2) return;
+        // По умолчанию — вставка во внешний контур
+        const newOuterRing = insertPointIntoRing(positions[0], latlng, map);
+        const updatedPositions = [newOuterRing, ...positions.slice(1)];
 
-        let minDist = Infinity;
-        let insertIndex = 0;
+        const closedOuterRing = closePolygonRing(newOuterRing);
+        const holes = positions.slice(1);
 
-        for (let i = 0; i < outerRing.length; i++) {
-            const currLatLng = L.latLng(outerRing[i]);
-            const nextLatLng = L.latLng(outerRing[(i + 1) % outerRing.length]);
-
-            const currPoint = map.latLngToLayerPoint(currLatLng);
-            const nextPoint = map.latLngToLayerPoint(nextLatLng);
-
-            const dist = L.LineUtil.pointToSegmentDistance(
-                clickPoint,
-                currPoint,
-                nextPoint,
+        if (!areHolesInsideOuterRing(closedOuterRing, holes)) {
+            toast.warning(
+                'Нельзя вставить точку: дырка выйдет за пределы внешнего полигона',
             );
-
-            if (dist < minDist) {
-                minDist = dist;
-                insertIndex = i + 1;
-            }
+            return;
         }
 
-        const newOuterRing = [...outerRing];
-        newOuterRing.splice(insertIndex, 0, [latlng.lat, latlng.lng]);
-
-        const updatedPositions = [newOuterRing, ...positions.slice(1)];
         setPositions(updatedPositions);
         onChange(updatedPositions);
     });
+
+    const handleMarkerClick = (
+        ringIndex: number,
+        pointIndex: number,
+        e: LeafletMouseEvent,
+    ) => {
+        if (!e.originalEvent.shiftKey) return;
+
+        const ring = positions[ringIndex];
+
+        if (ring.length <= 3 && ringIndex === 0) {
+            toast.error('Внешний контур должен содержать минимум 3 точки');
+            return;
+        }
+
+        const updated = positions.map((r, i) =>
+            i === ringIndex ? r.filter((_, j) => j !== pointIndex) : r,
+        );
+
+        if (ringIndex === 0) {
+            const newOuterRing = closePolygonRing(updated[0]);
+
+            const holes = positions.slice(1);
+            if (!areHolesInsideOuterRing(newOuterRing, holes)) {
+                toast.error(
+                    'Нельзя удалять точку: дырка выйдет за пределы внешнего полигона',
+                );
+                return;
+            }
+
+            updated[0] = newOuterRing;
+        }
+
+        const cleaned = updated.filter((r, i) => i === 0 || r.length >= 3);
+
+        setPositions(cleaned);
+        onChange(cleaned);
+    };
+
     const handleDrag = (
+        ringIndex: number,
+        pointIndex: number,
+        marker: L.Marker,
+    ) => {
+        const latlng = marker.getLatLng();
+
+        if (ringIndex === 0) {
+            const newOuterRing = closePolygonRing(
+                positions[0].map((pt, idx) =>
+                    idx === pointIndex ? [latlng.lat, latlng.lng] : pt,
+                ),
+            );
+
+            const holes = positions.slice(1);
+
+            if (!areHolesInsideOuterRing(newOuterRing, holes)) {
+                marker.setLatLng(positions[ringIndex][pointIndex]);
+
+                if (warningTimeout.current) return;
+                toast.dismiss();
+                toast.warning(
+                    'Нельзя выходить за внешний контур — внутренняя дырка выйдет за его пределы',
+                );
+                allowUpdate.current = false;
+
+                warningTimeout.current = setTimeout(() => {
+                    warningTimeout.current = null;
+                }, 1500);
+                return;
+            }
+        } else {
+            const outerRing = closePolygonRing(positions[0]);
+            const isInside = areHolesInsideOuterRing(outerRing, [
+                positions[ringIndex].map((pt, idx) =>
+                    idx === pointIndex ? [latlng.lat, latlng.lng] : pt,
+                ),
+            ]);
+
+            if (!isInside) {
+                marker.setLatLng(positions[ringIndex][pointIndex]);
+                allowUpdate.current = false;
+
+                if (warningTimeout.current) return;
+
+                toast.dismiss();
+                toast.warning('Нельзя выходить за внешний контур');
+
+                warningTimeout.current = setTimeout(() => {
+                    warningTimeout.current = null;
+                }, 1500);
+                return;
+            }
+        }
+
+        allowUpdate.current = true;
+    };
+
+    const handleDraged = (
         ringIndex: number,
         pointIndex: number,
         latlng: LatLng,
@@ -124,46 +215,8 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
                 : ring,
         ) as LatLngTuple[][];
 
-        if (ringIndex > 0) {
-            const outerPolygon = L.polygon(positions[0]);
-            const layerPoint = map.latLngToLayerPoint(latlng);
-            const isInside = (outerPolygon as any)._containsPoint(layerPoint);
-
-            if (!isInside) {
-                toast.error('Внутренний контур не может выходить за внешний!');
-                // Откатываем маркер на старую позицию
-                marker.setLatLng(positions[ringIndex][pointIndex]);
-                return;
-            }
-        }
-
         setPositions(updated);
         onChange(updated);
-    };
-
-    // Удаление точки по Shift + клик на маркер (можно изменить по желанию)
-    const handleMarkerClick = (
-        ringIndex: number,
-        pointIndex: number,
-        e: L.LeafletMouseEvent,
-    ) => {
-        if (e.originalEvent.shiftKey) {
-            const ring = positions[ringIndex];
-            if (ring.length <= 3 && ringIndex === 0) {
-                toast('Внешний контур должен содержать минимум 3 точки', {
-                    type: 'error',
-                });
-                return;
-            }
-
-            const updated = positions
-                .map((r, i) =>
-                    i === ringIndex ? r.filter((_, j) => j !== pointIndex) : r,
-                )
-                .filter((r) => r.length >= 3 || r === positions[0]); // удаляем внутренние контуры с <3 точками
-            setPositions(updated);
-            onChange(updated);
-        }
     };
 
     return (
@@ -171,9 +224,9 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             {positions.map((ring, ringIndex) => (
                 <React.Fragment key={`ring-${ringIndex}`}>
                     <Polygon
-                        positions={[ring]} // Оборачиваем ring в массив, чтобы получить LatLngTuple[][]
+                        positions={positions}
                         pathOptions={{
-                            color: ringIndex === 0 ? 'blue' : 'red',
+                            color: ringIndex === 0 ? 'blue' : 'gray',
                         }}
                     />
                     {ring.map((pos, pointIndex) => (
@@ -182,12 +235,18 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
                             position={pos}
                             draggable
                             eventHandlers={{
-                                dragend: (e) =>
+                                drag: (e) =>
                                     handleDrag(
                                         ringIndex,
                                         pointIndex,
-                                        e.target.getLatLng(),
-                                        e.target, // передаем сам маркер
+                                        e.target as L.Marker,
+                                    ),
+                                dragend: (e) =>
+                                    handleDraged(
+                                        ringIndex,
+                                        pointIndex,
+                                        (e.target as L.Marker).getLatLng(),
+                                        e.target as L.Marker,
                                     ),
                                 click: (e) =>
                                     handleMarkerClick(ringIndex, pointIndex, e),
