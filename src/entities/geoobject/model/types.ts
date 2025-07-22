@@ -116,6 +116,20 @@ export type GeometryGeoJSON =
           coordinates: LatLngTuple;
       }
     | {
-          type: 'PolyLine' | 'Polygon';
+          type: 'PolyLine';
           coordinates: LatLngTuple[];
+      }
+    | {
+          type: 'Polygon';
+          coordinates: LatLngTuple[][];
+          // [ [внешний контур], [внутренний контур 1], [внутренний контур 2], ... ]
+      }
+    | {
+          type: 'MultiPolygon';
+          coordinates: LatLngTuple[][][];
+          // [ [ [внешний + внутренние] ], [ [внешний + внутренние] ], ... ]
       };
+/*     | {
+          type: 'MultiPolyline';
+          coordinates: LatLngTuple[][];
+      } */

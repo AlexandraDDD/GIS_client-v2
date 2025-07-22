@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useUnit } from 'effector-react';
-import { Circle, Polygon, Polyline, useMap } from 'react-leaflet';
+import { Circle, LayerGroup, Polygon, Polyline, useMap } from 'react-leaflet';
 import {
     geoObjectModel,
     getGeometry,
@@ -9,7 +9,9 @@ import {
 } from '../../../../entities/geoobject';
 import { mapObjectsModel } from '../../lib/map-objects.model';
 import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
-import { MapObjectPopup } from '../map-object-popup/map-object-popup';
+import { mapModel } from '../../../../entities/map';
+import { EditablePolygon } from '../editablePolygon/editablePolygon';
+import { LatLngTuple } from 'leaflet';
 
 export const MapObjects = () => {
     const zoomedObject = useUnit(mapObjectsModel.$zoomedObject);
@@ -19,6 +21,24 @@ export const MapObjects = () => {
 
     const geoObject = useUnit(geoObjectModel.$geoObject);
     const proxyGeoObjects = geoObject?.proxyGeoSystemDtos ?? [];
+
+    //отрисовка либо геометрии геосистемы либо редактируемой геометрии
+    const isGeometryEditMode = useUnit(mapModel.$isGeometryEditMode);
+    const editedGeometry = useUnit(mapModel.$editedGeometry);
+
+    const maingeometry =
+        isGeometryEditMode && editedGeometry
+            ? editedGeometry
+            : geoObject
+              ? getGeometry(geoObject)
+              : null;
+
+    const handlePolygonChange = (updatedCoords: LatLngTuple[][]) => {
+        mapModel.setEditedGeometry({
+            type: 'Polygon',
+            coordinates: updatedCoords,
+        });
+    };
 
     useEffect(() => {
         const handleZoom = () => {
@@ -34,35 +54,39 @@ export const MapObjects = () => {
         <>
             {geoObject &&
                 (() => {
-                    const geometry = getGeometry(geoObject);
-                    if (!geometry) return null;
+                    maingeometry;
+                    if (!maingeometry) return null;
                     const isSelected = selectedGeoobject?.id === geoObject.id;
 
                     return getGeometryComponent(
                         geoObject,
-                        geometry,
+                        maingeometry,
                         zoomedObject,
                         zoom,
                         isSelected,
                         false,
+                        isGeometryEditMode,
+                        isGeometryEditMode ? handlePolygonChange : undefined,
                     );
                 })()}
+            {!isGeometryEditMode &&
+                proxyGeoObjects.map((proxy) => {
+                    if (!proxy.geometry) return null;
+                    const geometry = getGeometry(proxy);
+                    if (!geometry) return null;
 
-            {proxyGeoObjects.map((proxy) => {
-                if (!proxy.geometry) return null;
-                const geometry = getGeometry(proxy);
-                if (!geometry) return null;
-                const isSelected = selectedGeoobject?.id === proxy.id;
+                    const isSelected = selectedGeoobject?.id === proxy.id;
 
-                return getGeometryComponent(
-                    proxy,
-                    geometry,
-                    zoomedObject,
-                    zoom,
-                    isSelected,
-                    true,
-                );
-            })}
+                    return getGeometryComponent(
+                        proxy,
+                        geometry,
+                        zoomedObject,
+                        zoom,
+                        isSelected,
+                        true,
+                        false,
+                    );
+                })}
         </>
     );
 };
@@ -74,8 +98,13 @@ const getGeometryComponent = (
     zoom: number,
     isSelected: boolean,
     isProxy: boolean,
+    isGeometryEditMode: boolean,
+    onChange?: (coords: LatLngTuple[][]) => void,
 ): JSX.Element | null => {
     const { type, coordinates } = geometry;
+
+    console.log(type);
+
     const isZoomed = zoomedObject?.id === object.id;
 
     const sizeMultiplier = Math.max(1, zoom / 12);
@@ -113,49 +142,41 @@ const getGeometryComponent = (
         color,
         fillColor: color,
         fillOpacity: 0.4,
+        weight,
         zIndexOffset: isZoomed ? 1000 : 0,
     };
+
+    if (isGeometryEditMode && onChange && type === 'Polygon') {
+        return (
+            <EditablePolygon
+                geoObject={object}
+                geometry={geometry}
+                onChange={onChange}
+            />
+        );
+    }
+
     switch (type) {
         case 'Point':
             return (
-                <Circle {...commonProps} radius={radius} center={coordinates}>
-                    {/*   <MapObjectPopup
-                        object={object}
-                        isProxy={isProxy}
-                        visible={isSelected}
-                    /> */}
-                </Circle>
+                <Circle {...commonProps} radius={radius} center={coordinates} />
             );
 
         case 'PolyLine':
-            return (
-                <Polyline
-                    {...commonProps}
-                    weight={weight}
-                    positions={coordinates}
-                >
-                    {/*  <MapObjectPopup
-                        object={object}
-                        isProxy={isProxy}
-                        visible={isSelected}
-                    /> */}
-                </Polyline>
-            );
+            return <Polyline {...commonProps} positions={coordinates} />;
 
         case 'Polygon':
+            return <Polygon {...commonProps} positions={coordinates} />;
+
+        case 'MultiPolygon':
             return (
-                <Polygon
-                    {...commonProps}
-                    weight={weight}
-                    positions={coordinates}
-                >
-                    {/*  <MapObjectPopup
-                        object={object}
-                        isProxy={isProxy}
-                        visible={isSelected}
-                    /> */}
-                </Polygon>
+                <LayerGroup key={updateKey}>
+                    {coordinates.map((polygonRings, idx) => (
+                        <Polygon positions={polygonRings} {...commonProps} />
+                    ))}
+                </LayerGroup>
             );
+
         default:
             return null;
     }

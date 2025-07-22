@@ -98,7 +98,7 @@ export const Map = () => {
                     <MapContainer
                         center={[59.955, 30.3]}
                         zoom={12}
-                        style={{ height: '95vh', width: '100%' }}
+                        style={{ height: '100%', width: '100%' }}
                     >
                         <_MapSetter />
 

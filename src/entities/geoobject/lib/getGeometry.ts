@@ -5,62 +5,93 @@ import type {
     ProxyGeoSystemSummary,
 } from '../model/types';
 
-/* export const getGeometry = ({ geometry }: GeoObject) =>
-    geometry?.borderGeocodes && geometry.borderGeocodes !== 'string'
-        ? (JSON.parse(geometry.borderGeocodes) as GeometryGeoJSON)
-        : null; */
-
-//временный парсинг геометрии для отрисовки
-
 export const getGeometry = ({
     geometry,
 }: GeoObject | ProxyGeoSystemSummary): GeometryGeoJSON | null => {
-    if (!geometry) return null;
+    if (!geometry || !geometry.border) return null;
 
-    let coords;
+    let coords: unknown;
     try {
         coords = JSON.parse(geometry.border);
     } catch {
         return null;
     }
 
-    if (!coords || !Array.isArray(coords)) {
-        return null;
-    }
+    if (!coords || !Array.isArray(coords)) return null;
 
-    // Проверяем, что каждый элемент - массив с двумя числами (lat, lng)
-    if (
-        !coords.every(
-            (coord) =>
-                Array.isArray(coord) &&
-                coord.length === 2 &&
-                typeof coord[0] === 'number' &&
-                typeof coord[1] === 'number',
-        )
-    ) {
-        return null;
-    }
+    const isLatLng = (val: any): val is LatLngTuple =>
+        Array.isArray(val) &&
+        val.length === 2 &&
+        typeof val[0] === 'number' &&
+        typeof val[1] === 'number';
 
-    // Если точек меньше 2 — считаем точкой
-    if (coords.length === 1) {
+    // Если координаты — одиночная точка
+    if (isLatLng(coords)) {
         return {
             type: 'Point',
-            coordinates: coords[0] as LatLngTuple,
+            coordinates: coords,
         };
     }
 
-    // Если точек 4 и больше — считаем полигоном
-    // (Обычно для полигона минимум 4 точки — последняя равна первой, чтобы замкнуть)
-    if (coords.length >= 4) {
+    // Если координаты — массив точек LatLngTuple[]
+    if (coords.every(isLatLng)) {
+        const first = coords[0];
+        const last = coords[coords.length - 1];
+
+        // Если последняя точка не совпадает с первой — добавляем её для замыкания полигона
+        const isClosed = first[0] === last[0] && first[1] === last[1];
+        const polygonCoords = isClosed ? coords : [...coords, first];
+
         return {
             type: 'Polygon',
-            coordinates: coords as LatLngTuple[],
+            coordinates: [polygonCoords],
         };
     }
 
-    // Иначе — просто PolyLine
-    return {
-        type: 'PolyLine',
-        coordinates: coords as LatLngTuple[],
-    };
+    // Если координаты — массив колец (LatLngTuple[][])
+    if (coords.every((ring) => Array.isArray(ring) && ring.every(isLatLng))) {
+        // Для каждого кольца проверяем замыкание
+        const polygonCoords = (coords as LatLngTuple[][]).map((ring) => {
+            const first = ring[0];
+            const last = ring[ring.length - 1];
+            return first[0] === last[0] && first[1] === last[1]
+                ? ring
+                : [...ring, first];
+        });
+
+        return {
+            type: 'Polygon',
+            coordinates: polygonCoords,
+        };
+    }
+
+    // Если координаты — MultiPolygon (LatLngTuple[][][])
+    if (
+        coords.every(
+            (polygon) =>
+                Array.isArray(polygon) &&
+                polygon.every(
+                    (ring) => Array.isArray(ring) && ring.every(isLatLng),
+                ),
+        )
+    ) {
+        // Аналогично замыкаем все кольца всех полигонов
+        const multiPolygonCoords = (coords as LatLngTuple[][][]).map(
+            (polygon) =>
+                polygon.map((ring) => {
+                    const first = ring[0];
+                    const last = ring[ring.length - 1];
+                    return first[0] === last[0] && first[1] === last[1]
+                        ? ring
+                        : [...ring, first];
+                }),
+        );
+
+        return {
+            type: 'MultiPolygon',
+            coordinates: multiPolygonCoords,
+        };
+    }
+
+    return null;
 };

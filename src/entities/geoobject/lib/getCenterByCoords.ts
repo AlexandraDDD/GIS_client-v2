@@ -1,16 +1,35 @@
 import type { LatLngTuple } from 'leaflet';
-
 import type { GeometryGeoJSON } from '../model/types';
 
-const isCoordsOfPoint = (coords: GeometryGeoJSON['coordinates']): coords is LatLngTuple =>
-    typeof coords[0] === 'number';
+const isCoordsOfPoint = (
+    coords: GeometryGeoJSON['coordinates'],
+): coords is LatLngTuple => typeof coords[0] === 'number';
 
-export const getCenterByCoords = (coords: GeometryGeoJSON['coordinates']): LatLngTuple => {
+const isLatLngTupleArray = (coords: any): coords is LatLngTuple[] =>
+    Array.isArray(coords) && typeof coords[0][0] === 'number';
+
+export const getCenterByCoords = (
+    coords: GeometryGeoJSON['coordinates'],
+): LatLngTuple => {
     if (isCoordsOfPoint(coords)) {
         return coords;
     }
 
-    const coordsSum = coords.reduce(([lat, long], [lat2, long2]) => [lat + lat2, long + long2], [0, 0]);
+    if (isLatLngTupleArray(coords)) {
+        const [latSum, lngSum] = coords.reduce(
+            ([sumLat, sumLng], [lat, lng]) => [sumLat + lat, sumLng + lng],
+            [0, 0],
+        );
 
-    return [coordsSum[0] / coords.length, coordsSum[1] / coords.length];
+        return [latSum / coords.length, lngSum / coords.length];
+    }
+
+    // Например, Polygon: LatLngTuple[][]
+    const flattened: LatLngTuple[] = (coords as LatLngTuple[][]).flat();
+    const [latSum, lngSum] = flattened.reduce(
+        ([sumLat, sumLng], [lat, lng]) => [sumLat + lat, sumLng + lng],
+        [0, 0],
+    );
+
+    return [latSum / flattened.length, lngSum / flattened.length];
 };

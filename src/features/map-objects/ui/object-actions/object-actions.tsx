@@ -3,17 +3,14 @@ import { useUnit } from 'effector-react';
 import { Button } from '../../../../shared/ui/button';
 
 import { MapObjectDescription } from '../map-object-description/map-object-description';
-import {
-    GeoObject,
-    geoObjectModel,
-    getGeometry,
-} from '../../../../entities/geoobject';
+import { GeoObject, getGeometry } from '../../../../entities/geoobject';
 import styles from './object-actions.module.css';
 import { mapObjectsModel } from '../../lib/map-objects.model';
 import { mapModel } from '../../../../entities/map';
 import { editorModel } from '../../../map-editor/lib/editor.model';
 import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
 import { isProxyGeoSystem } from '../../../../utils/IsProxyGeosystem';
+import { toast } from 'react-toastify';
 
 interface MapObjectItemProps {
     geoObject: GeoObject | ProxyGeoSystemSummary;
@@ -36,6 +33,9 @@ export const MapObjectItem: React.FC<MapObjectItemProps> = ({ geoObject }) => {
     const mapEditable = mapMode === 'edit';
     const isClippingMode = useUnit(mapModel.$isClippingMode);
     console.log(geoObject);
+
+    const isGeometryEditMode = useUnit(mapModel.$isGeometryEditMode);
+    const editedGeometry = useUnit(mapModel.$editedGeometry);
 
     const isProxy = isProxyGeoSystem(geoObject);
     if (isProxy) {
@@ -79,30 +79,86 @@ export const MapObjectItem: React.FC<MapObjectItemProps> = ({ geoObject }) => {
     const handleTransition = (ProxyGeoObject: ProxyGeoSystemSummary) => {
         console.log('функци перехода ( не готово)');
     };
+    const toggleEditGeometry = () => {
+        if (!isGeometryEditMode) {
+            const geometry = getGeometry(geoObject);
+            if (geometry) {
+                mapModel.setEditedGeometry(geometry);
+            } else {
+                toast('Невозможно получить данные о геометрии', {
+                    type: 'error',
+                });
+                return;
+            }
+        }
+        mapModel.toggleGeometryEditMode();
+    };
+    const handleSaveGeometry = () => {
+        if (!editedGeometry || !geoObject) return;
+
+        // Здесь потом будет запрос на сервер
+        console.log('Сохраняем геометрию:', editedGeometry);
+
+        // После успешного сохранения:
+        mapModel.resetEditedGeometry();
+        mapModel.toggleGeometryEditMode();
+    };
     return (
         <div className={styles.wrapper}>
             <MapObjectDescription geoObject={geoObject} />
-            <div className={styles.btns}>
-                <Button
-                    mix={styles.btn}
-                    onClick={() => handleUnSelect()}
-                    color="violet"
-                >
-                    Снять выделение
-                </Button>
-                <Button mix={styles.btn} onClick={() => handleZoom(geoObject)}>
-                    Приблизить
-                </Button>
-                {isProxy && (
+            {isGeometryEditMode ? (
+                <div className={styles.btns}>
                     <Button
                         mix={styles.btn}
-                        onClick={() => handleTransition(geoObject)}
+                        onClick={() => handleSaveGeometry()}
+                        color="violet"
                     >
-                        Переход к геосистеме
+                        Сохранить изменения
                     </Button>
-                )}
+                    <Button
+                        mix={styles.btn}
+                        onClick={() => toggleEditGeometry()}
+                    >
+                        Выйти
+                    </Button>
 
-                {/*   {mapEditable &&
+                    <p> Удалить точку ( Shift + клик на маркер )</p>
+                    <p> Добавить точку во внтуренний контур ( Alt + клик )</p>
+                    <p> Добавить внутренний контур ( Ctrl + клик )</p>
+                </div>
+            ) : (
+                <div className={styles.btns}>
+                    <Button
+                        mix={styles.btn}
+                        onClick={() => handleUnSelect()}
+                        color="violet"
+                    >
+                        Снять выделение
+                    </Button>
+                    <Button
+                        mix={styles.btn}
+                        onClick={() => handleZoom(geoObject)}
+                    >
+                        Приблизить
+                    </Button>
+                    {isProxy && (
+                        <Button
+                            mix={styles.btn}
+                            onClick={() => handleTransition(geoObject)}
+                        >
+                            !Переход к геосистеме!
+                        </Button>
+                    )}
+                    {!isProxy && (
+                        <Button
+                            mix={styles.btn}
+                            onClick={() => toggleEditGeometry()}
+                        >
+                            Редактировать геометрию
+                        </Button>
+                    )}
+
+                    {/*   {mapEditable &&
                     <Button mix={styles.btn} onClick={() => handleClipping(geoObject)}>
                         {isClippingMode ? 'Отключить редактор' : 'Редактировать местность'}
                     </Button>
@@ -117,7 +173,8 @@ export const MapObjectItem: React.FC<MapObjectItemProps> = ({ geoObject }) => {
                 <Button mix={styles.btn} onClick={() => handleDelete(geoObject)} color="orange">
                     Удалить
                 </Button> */}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
