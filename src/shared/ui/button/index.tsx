@@ -4,17 +4,27 @@ import { bem } from '../../lib';
 
 import './index.scss';
 
-interface Props extends React.PropsWithChildren, React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface Props
+    extends React.PropsWithChildren,
+        React.ButtonHTMLAttributes<HTMLButtonElement> {
     mix?: string;
     color?: 'blue' | 'orange' | 'violet';
     size?: 's' | 'm';
+    flex?: boolean;
 }
 
 const b = bem('button');
 
-export const Button = ({ color = 'blue', size = 's', mix, children, ...props }: Props) => {
+export const Button = ({
+    color = 'blue',
+    size = 's',
+    mix,
+    flex = false,
+    children,
+    ...props
+}: Props) => {
     return (
-        <button className={b(null, { color, size }, mix)} {...props}>
+        <button className={b(null, { color, size, flex }, mix)} {...props}>
             {children}
         </button>
     );

@@ -2,50 +2,43 @@ import type { LatLngTuple } from 'leaflet';
 
 import type { GEO_OBJECT_STATUS } from './constants';
 
-/**
- * Lean client‑side TypeScript representations of GeoSystem API response.
- * Redundant server‑only fields stripped; nested objects flattened into
- * reusable interfaces that reflect only the data the front‑end usually needs.
- */
-
+/** Базовые типы идентификаторов и дат */
 export type UUID = string;
 export type ISODateString = string;
 
-/* ──────────────────── Core entities ──────────────────── */
-
+/** Черновик геообъекта для создания/редактирования на клиенте */
 export interface DraftGeoObject {
     /** Любое имя */
     name: string;
 
     description?: string;
 
-    /** Статус обьекта  */
+    /** Статус объекта */
     status?: (typeof GEO_OBJECT_STATUS)[keyof typeof GEO_OBJECT_STATUS];
 
-    geometry: Geometry; //обратить внимание когда будет сервер
+    /** Геометрия */
+    geometry: Geometry;
 }
 
+/** Полный геообъект из API (расширяет черновик служебными полями) */
 export interface GeoObject extends DraftGeoObject {
     id: string;
 
     nameVariants?: string[] | null;
-
     rank?: number;
-
     type?: GeoType;
 
     altGeoSystems?: AltGeoSystem[] | null;
 
     aspects?: AspectSummary[];
-
     classifierCodes?: ClassifierCode[];
     previousNames?: PreviousName[] | null;
+
+    /** Прокси-геосистемы, связанные с объектом */
     proxyGeoSystemDtos: ProxyGeoSystemSummary[];
 }
 
-/* ──────────────────── Sub‑entities ──────────────────── */
-
-//ДОБАВИТЬ GEOJSON ПОСЛЕ ИСПРАВЛЕНИЯ СЕРВЕРА
+/** Геометрия из API ?? */
 export interface Geometry {
     coordinateReferenceSystem?: string;
     border: string;
@@ -57,7 +50,8 @@ export interface Geometry {
     gooJsonStyleType?: string;
     altGeoContents?: string[];
 }
-// очень сильно в будущем
+
+/** Альтернативная геосистема (ссылки/метаданные) */
 export interface AltGeoSystem {
     id: UUID;
     name: string;
@@ -66,20 +60,23 @@ export interface AltGeoSystem {
     baseEndPointUrl?: string;
 }
 
+/** Тип геообъекта (классификация/описание) */
 export interface GeoType {
     name: string;
     description?: string;
     geoNamesFeatureCode?: string;
 }
 
+/** Краткая сводка аспекта геосистемы */
 export interface AspectSummary {
     id: UUID;
     name: string;
     description?: string;
-    /** Optional documentation URL */
+    /** Документация по аспекту */
     htmlDocUrl?: string;
 }
 
+/** Краткая информация о прокси-геосистеме */
 export interface ProxyGeoSystemSummary {
     id: string;
     name: string;
@@ -87,8 +84,8 @@ export interface ProxyGeoSystemSummary {
     rank?: number;
     type?: GeoType;
 
-    geometry?: Geometry; //обратить внимание когда будет сервер
-    borderWithGeoSystem?: string | null; //ТУТ ТОЖЕ GEOJSON??
+    geometry?: Geometry;
+    borderWithGeoSystem?: string | null;
 
     aspects?: string[];
     spatialPredicate?: Number;
@@ -97,6 +94,7 @@ export interface ProxyGeoSystemSummary {
     aspectName?: string;
 }
 
+/** Код классификатора */
 export interface ClassifierCode {
     code: string;
     name: string;
@@ -104,36 +102,42 @@ export interface ClassifierCode {
     classifierUrl?: string;
 }
 
+/** Исторические названия объекта с периодами действия */
 export interface PreviousName {
     name: string;
     start?: ISODateString;
     end?: ISODateString;
 }
 
+/** Упрощённый GeoJSON для клиента (LatLngTuple-координаты) */
 export type GeometryGeoJSON =
     | {
+          /** Точка */
           type: 'Point';
           coordinates: LatLngTuple;
       }
     | {
+          /** Ломаная линия */
           type: 'PolyLine';
           coordinates: LatLngTuple[];
       }
     | {
+          /** Полигон с кольцами: [внешний, ...внутренние] */
           type: 'Polygon';
           coordinates: LatLngTuple[][];
-          // [ [внешний контур], [внутренний контур 1], [внутренний контур 2], ... ]
       }
     | {
+          /** Мультиполигон: массив полигонов с их кольцами */
           type: 'MultiPolygon';
           coordinates: LatLngTuple[][][];
-          // [ [ [внешний + внутренние] ], [ [внешний + внутренние] ], ... ]
       };
 
+/** Пэйлоад PATCH для обновления геометрии геообъекта */
 export interface GeoObjectGeometryPatch {
     id: string;
     geometry: Geometry;
 }
+
 /*     | {
           type: 'MultiPolyline';
           coordinates: LatLngTuple[][];

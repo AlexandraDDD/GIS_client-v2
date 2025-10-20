@@ -31,7 +31,6 @@
     }
 
     &_size_m {
-      
         min-width: 48px;
         min-height: 48px;
         height: auto;
@@ -65,5 +64,11 @@
 
     &:hover:not(:disabled) {
         background-color: #d3d4d5;
+    }
+    &_flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 }

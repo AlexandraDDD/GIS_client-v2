@@ -2,12 +2,8 @@ import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { useSearchParams } from 'react-router-dom';
 import { useMount } from 'react-use';
-
-import { Button } from '../../../shared/ui/button';
-import { mapModel } from '../../../entities/map';
-import type { MapMode } from '../../../entities/map/lib/types';
-/* import { aspectsModel, classifiersModel } from '../../../entities/geoobject'; */
-
+import { mapModel } from '../../map';
+import type { MapMode } from '../../map/lib/types';
 import styles from './info-plate.module.css';
 
 /** Настройки страницы и карты (выбор режима просмотра) */
@@ -35,7 +31,9 @@ export const InfoPlate = () => {
     };
 
     const editorPointsOnCorners = useUnit(mapModel.$editorPointsOnCorners);
-    const handlePointsOnCornersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePointsOnCornersChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
         mapModel.setEditorPointsOnCorners(e.target.checked);
     };
 
@@ -44,8 +42,14 @@ export const InfoPlate = () => {
             <div className={styles.settings}>
                 <label>
                     <span>Режим работы с картой:</span>
-                    <select name="map-mode" onChange={handleModeChange} value={mapMode}>
-                        <option value="view">Просмотр сохраненных геообьектов</option>
+                    <select
+                        name="map-mode"
+                        onChange={handleModeChange}
+                        value={mapMode}
+                    >
+                        <option value="view">
+                            Просмотр сохраненных геообьектов
+                        </option>
                         <option value="edit">Создание новых геообьектов</option>
                     </select>
                 </label>
@@ -53,11 +57,14 @@ export const InfoPlate = () => {
                 {mapMode === 'edit' && (
                     <label>
                         <span>Точки на углах:</span>
-                        <input type="checkbox" onChange={handlePointsOnCornersChange} checked={editorPointsOnCorners} />
+                        <input
+                            type="checkbox"
+                            onChange={handlePointsOnCornersChange}
+                            checked={editorPointsOnCorners}
+                        />
                     </label>
                 )}
             </div>
-
             {/*    <div className={styles.groupBtns}>
                 <Button mix={styles.btn} onClick={() => classifiersModel.setIsNewClassModalOpen(true)}>
                     Создать классификатор

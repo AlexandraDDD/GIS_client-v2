@@ -1,6 +1,13 @@
 import type { LatLngTuple } from 'leaflet';
 import type { GeometryGeoJSON } from '../model/types';
 
+/**
+ * Вычисляет географический центр (среднюю точку) по переданным координатам геометрии.
+ *
+ * Возвращает:
+ *  - Кортеж [lat, lng] — центр геометрии.
+ */
+
 const isCoordsOfPoint = (
     coords: GeometryGeoJSON['coordinates'],
 ): coords is LatLngTuple => typeof coords[0] === 'number';
@@ -24,7 +31,6 @@ export const getCenterByCoords = (
         return [latSum / coords.length, lngSum / coords.length];
     }
 
-    // Например, Polygon: LatLngTuple[][]
     const flattened: LatLngTuple[] = (coords as LatLngTuple[][]).flat();
     const [latSum, lngSum] = flattened.reduce(
         ([sumLat, sumLng], [lat, lng]) => [sumLat + lat, sumLng + lng],

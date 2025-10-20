@@ -5,6 +5,9 @@ import type {
     ProxyGeoSystemSummary,
 } from '../model/types';
 
+/** Преобразует geometry.border в GeoJSON, определяя тип (Point, Polygon, MultiPolygon)
+ * и замыкая кольца.
+ */
 export const getGeometry = ({
     geometry,
 }: GeoObject | ProxyGeoSystemSummary): GeometryGeoJSON | null => {
@@ -75,7 +78,7 @@ export const getGeometry = ({
                 ),
         )
     ) {
-        // Аналогично замыкаем все кольца всех полигонов
+        //  замыкаем все кольца всех полигонов
         const multiPolygonCoords = (coords as LatLngTuple[][][]).map(
             (polygon) =>
                 polygon.map((ring) => {

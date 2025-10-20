@@ -8,7 +8,7 @@ import {
     type GeometryGeoJSON,
     getCenterByCoords,
 } from '../../../../entities/geoobject';
-import { mapModel } from '../../../../entities/map';
+import { mapModel } from '../../../map';
 import { useTimezoneAndLocalTime } from '../../../../shared/lib/time';
 import { TextWithCopy } from '../../../../shared/ui/text-with-copy';
 

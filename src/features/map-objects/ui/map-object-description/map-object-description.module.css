@@ -1,5 +1,5 @@
 .title {
-    margin-bottom: 4px;
+    margin: 10px 0 5px 0;
 }
 
 .spoiler {
@@ -46,4 +46,8 @@
 .aspectInfo {
     font-size: 14px;
     color: #888;
+}
+
+.text1 {
+    padding: 15px 0 5px 0;
 }

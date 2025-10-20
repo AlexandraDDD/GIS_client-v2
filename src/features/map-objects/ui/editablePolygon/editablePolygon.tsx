@@ -17,15 +17,21 @@ interface Props {
     onChange: (coords: LatLngTuple[][]) => void;
 }
 
+/** Редактируемый полигон: клики добавляют точки/дыры, маркеры — перетаскиваемые вершины */
 export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
+    /** Текущее состояние колец: [внешний контур, ...внутренние] */
     const [positions, setPositions] = useState<LatLngTuple[][]>(
         geometry.coordinates as LatLngTuple[][],
     );
 
+    /** Флаг, чтобы подавлять обновление после принудительного отката маркера */
     const allowUpdate = useRef(true);
     const map = useMap();
+    /** Троттлинг предупреждений, чтобы не спамить toast */
     const warningTimeout = useRef<NodeJS.Timeout | null>(null);
 
+    /** Клик по карте: вставка точки (Alt — в ближайшее внутреннее кольцо,
+     * Ctrl — создать новое отверстие) */
     useMapEvent('click', (e) => {
         const latlng = e.latlng;
 
@@ -34,6 +40,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             return;
         }
 
+        // Ctrl: создать небольшое новое внутреннее кольцо-дырку
         if (e.originalEvent.ctrlKey) {
             const newHole: LatLngTuple[] = [
                 [latlng.lat, latlng.lng],
@@ -46,6 +53,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             return;
         }
 
+        // Alt: вставка точки в ближайший сегмент существующего внутреннего кольца
         if (e.originalEvent.altKey && positions.length > 1) {
             let bestRingIndex = 1;
             let minDist = Infinity;
@@ -87,10 +95,11 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             return;
         }
 
-        // По умолчанию — вставка во внешний контур
+        // По умолчанию: вставка точки во внешний контур
         const newOuterRing = insertPointIntoRing(positions[0], latlng, map);
         const updatedPositions = [newOuterRing, ...positions.slice(1)];
 
+        // Проверяем, что все отверстия остаются внутри внешнего контура
         const closedOuterRing = closePolygonRing(newOuterRing);
         const holes = positions.slice(1);
 
@@ -105,6 +114,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
         onChange(updatedPositions);
     });
 
+    /** Клик по маркеру точки: Shift — удалить вершину (с валидацией) */
     const handleMarkerClick = (
         ringIndex: number,
         pointIndex: number,
@@ -114,6 +124,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
 
         const ring = positions[ringIndex];
 
+        // Внешний контур должен иметь >= 3 точки
         if (ring.length <= 3 && ringIndex === 0) {
             toast.error('Внешний контур должен содержать минимум 3 точки');
             return;
@@ -123,10 +134,11 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             i === ringIndex ? r.filter((_, j) => j !== pointIndex) : r,
         );
 
+        // При изменении внешнего — проверяем, что дырки не выходят наружу
         if (ringIndex === 0) {
             const newOuterRing = closePolygonRing(updated[0]);
-
             const holes = positions.slice(1);
+
             if (!areHolesInsideOuterRing(newOuterRing, holes)) {
                 toast.error(
                     'Нельзя удалять точку: дырка выйдет за пределы внешнего полигона',
@@ -137,12 +149,14 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             updated[0] = newOuterRing;
         }
 
+        // Чистим «дырки» меньше 3 точек
         const cleaned = updated.filter((r, i) => i === 0 || r.length >= 3);
 
         setPositions(cleaned);
         onChange(cleaned);
     };
 
+    /** Перетаскивание вершины: валидация границ внешнего контура и отверстий */
     const handleDrag = (
         ringIndex: number,
         pointIndex: number,
@@ -151,6 +165,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
         const latlng = marker.getLatLng();
 
         if (ringIndex === 0) {
+            // Перетаскиваем внешнее кольцо — проверяем все дырки на вхождение
             const newOuterRing = closePolygonRing(
                 positions[0].map((pt, idx) =>
                     idx === pointIndex ? [latlng.lat, latlng.lng] : pt,
@@ -160,21 +175,21 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
             const holes = positions.slice(1);
 
             if (!areHolesInsideOuterRing(newOuterRing, holes)) {
+                // Откат позиции маркера и предупреждение
                 marker.setLatLng(positions[ringIndex][pointIndex]);
-
                 if (warningTimeout.current) return;
                 toast.dismiss();
                 toast.warning(
                     'Нельзя выходить за внешний контур — внутренняя дырка выйдет за его пределы',
                 );
                 allowUpdate.current = false;
-
                 warningTimeout.current = setTimeout(() => {
                     warningTimeout.current = null;
                 }, 1500);
                 return;
             }
         } else {
+            // Перетаскиваем отверстие — оно должно оставаться внутри внешнего
             const outerRing = closePolygonRing(positions[0]);
             const isInside = areHolesInsideOuterRing(outerRing, [
                 positions[ringIndex].map((pt, idx) =>
@@ -201,6 +216,7 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
         allowUpdate.current = true;
     };
 
+    /** Завершение перетаскивания: фиксируем новые координаты в состоянии/колбэке */
     const handleDraged = (
         ringIndex: number,
         pointIndex: number,
@@ -223,12 +239,14 @@ export const EditablePolygon = ({ geoObject, geometry, onChange }: Props) => {
         <>
             {positions.map((ring, ringIndex) => (
                 <React.Fragment key={`ring-${ringIndex}`}>
+                    {/* Визуализация полигона (включая отверстия) */}
                     <Polygon
                         positions={positions}
                         pathOptions={{
                             color: ringIndex === 0 ? 'blue' : 'gray',
                         }}
                     />
+                    {/* Маркеры-вершины с drag/shift-click поведением */}
                     {ring.map((pos, pointIndex) => (
                         <Marker
                             key={`marker-${ringIndex}-${pointIndex}`}

@@ -8,11 +8,13 @@ import { getGeometry, type GeoObject } from '../../../../entities/geoobject';
 
 import styles from './map-object-description.module.css';
 import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
+import { isProxyGeoSystem } from '../../../../utils/IsProxyGeosystem';
 
 interface MapObjectDescriptionProps {
     geoObject: GeoObject | ProxyGeoSystemSummary;
 }
 
+/** Описание для геообъекта (+ аспекты, классфификаторы, дети и т.д - не реализовано)*/
 export const MapObjectDescription = ({
     geoObject,
 }: MapObjectDescriptionProps) => {
@@ -31,7 +33,13 @@ export const MapObjectDescription = ({
  */
     const geometry = getGeometry(geoObject);
     if (!geometry) {
-        return <h3>Ошибка: выбран обьект с неизвестной геометрией</h3>;
+        return (
+            <>
+                <h3>{geoObject.name} </h3>
+                <TextWithCopy title="ID" text={geoObject.id} />
+                <p>Ошибка: обьект с неизвестной геометрией</p>
+            </>
+        );
     }
 
     /*    const handleAddClassFormOpen = () => geoObjectFormModel.setIsUpdateModalOpen(true);
@@ -41,13 +49,26 @@ export const MapObjectDescription = ({
     const handleAspectsFormOpen = () => geoObjectFormModel.setIsAssignAspectModalOpen(true);
     const handleNewAspectFormOpen = () => aspectsModel.setIsNewAspectModalOpen(true); */
 
+    const isProxy = isProxyGeoSystem(geoObject);
+
     return (
         <>
+            <p>
+                {isProxy === null
+                    ? 'Тип объекта не найден'
+                    : isProxy
+                      ? 'Прокси-геообъект'
+                      : 'Центральный геообъект'}
+            </p>
             <h3 className={styles.title}>
-                {geometry.type}: {geoObject.name}
+                {geoObject.name !== '' ? geoObject.name : 'имя не найдено'}
             </h3>
             <TextWithCopy title="ID" text={geoObject.id} />
-
+            {isProxy && (
+                <p className={styles.text1}>
+                    Выполните переход к объекту, чтобы редактировать его
+                </p>
+            )}
             {/*             <Spoiler mix={styles.spoiler} title="Классификаторы" badgeText="К">
                 {geoobjectClassifiers?.length ? (
                     <div className={styles.spoilerList}>

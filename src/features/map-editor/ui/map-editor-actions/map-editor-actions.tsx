@@ -3,7 +3,7 @@ import { LatLngTuple, LeafletMouseEvent } from 'leaflet';
 import { useUnit } from 'effector-react';
 
 import { Button } from '../../../../shared/ui/button';
-import { mapModel } from '../../../../entities/map';
+import { mapModel } from '../../../map';
 
 import { editorModel } from '../../lib/editor.model';
 import { EditorObject } from '../../lib/types';
@@ -28,25 +28,29 @@ export const MapEditorActions = () => {
         }
         const handleMapClick = (e: LeafletMouseEvent) => {
             if (isClippingMode && clippedObject) {
-
-                const clippedPolygon = getGeometry(clippedObject)
+                const clippedPolygon = getGeometry(clippedObject);
 
                 const isPointInsidePolygon = pointInsidePolygon(
-                    ([e.latlng.lat, e.latlng.lng]),
-                    clippedPolygon?.coordinates as LatLngTuple[])
+                    [e.latlng.lat, e.latlng.lng],
+                    clippedPolygon?.coordinates as LatLngTuple[],
+                );
 
                 if (!isPointInsidePolygon) {
-                    console.log('точка не может быть вне родительского полигона');
-
+                    console.log(
+                        'точка не может быть вне родительского полигона',
+                    );
+                } else {
+                    editorModel.addObject({
+                        type: 'Point',
+                        coordinates: [e.latlng.lat, e.latlng.lng],
+                    });
                 }
-                else {
-                    editorModel.addObject({ type: 'Point', coordinates: [e.latlng.lat, e.latlng.lng] });
-                }
-
             } else {
-                editorModel.addObject({ type: 'Point', coordinates: [e.latlng.lat, e.latlng.lng] });
+                editorModel.addObject({
+                    type: 'Point',
+                    coordinates: [e.latlng.lat, e.latlng.lng],
+                });
             }
-
         };
 
         map.addEventListener('click', handleMapClick);
@@ -68,7 +72,7 @@ export const MapEditorActions = () => {
 
     return (
         <div>
-            < MapObjectActions />
+            <MapObjectActions />
             <h2>Выбранные геообъекты:</h2>
 
             <ObjectsActionsContainer
@@ -76,10 +80,14 @@ export const MapEditorActions = () => {
                 extraButtons={
                     <>
                         {selectedPoints.length > 1 && (
-                            <Button onClick={() => unitePointsTo('PolyLine')}>Обьединить в линию</Button>
+                            <Button onClick={() => unitePointsTo('PolyLine')}>
+                                Обьединить в линию
+                            </Button>
                         )}
                         {selectedPoints.length > 2 && (
-                            <Button onClick={() => unitePointsTo('Polygon')}>Обьединить в полигон</Button>
+                            <Button onClick={() => unitePointsTo('Polygon')}>
+                                Обьединить в полигон
+                            </Button>
                         )}
                     </>
                 }
@@ -116,7 +124,8 @@ const ObjectsActionsContainer = ({
         objects.forEach(({ _id }) => func(_id));
     };
     const handleDelete = () => handleEvent(editorModel.deleteObject);
-    const handleRemoveSelection = () => handleEvent(editorModel.toggleObjectSelect);
+    const handleRemoveSelection = () =>
+        handleEvent(editorModel.toggleObjectSelect);
 
     return (
         <div className={styles.container}>

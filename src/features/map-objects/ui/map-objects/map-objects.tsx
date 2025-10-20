@@ -1,3 +1,8 @@
+/**
+ * Рендер геометрий выбранной геосистемы и её прокси на карте
+ * (с поддержкой зума и режима редактирования).
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { Circle, LayerGroup, Polygon, Polyline, useMap } from 'react-leaflet';
@@ -9,10 +14,11 @@ import {
 } from '../../../../entities/geoobject';
 import { mapObjectsModel } from '../../lib/map-objects.model';
 import { ProxyGeoSystemSummary } from '../../../../entities/geoobject/model/types';
-import { mapModel } from '../../../../entities/map';
+import { mapModel } from '../../../map';
 import { EditablePolygon } from '../editablePolygon/editablePolygon';
 import { LatLngTuple } from 'leaflet';
 
+/** Отрисовывает главную геосистему и её прокси; включает EditablePolygon в режиме редактирования */
 export const MapObjects = () => {
     const zoomedObject = useUnit(mapObjectsModel.$zoomedObject);
     const selectedGeoobject = useUnit(mapObjectsModel.$selectedGeoobject);
@@ -22,7 +28,7 @@ export const MapObjects = () => {
     const geoObject = useUnit(geoObjectModel.$geoObject);
     const proxyGeoObjects = geoObject?.proxyGeoSystemDtos ?? [];
 
-    //отрисовка либо геометрии геосистемы либо редактируемой геометрии
+    // отрисовка либо геометрии геосистемы либо редактируемой геометрии
     const isGeometryEditMode = useUnit(mapModel.$isGeometryEditMode);
     const editedGeometry = useUnit(mapModel.$editedGeometry);
 
@@ -39,7 +45,6 @@ export const MapObjects = () => {
             coordinates: updatedCoords,
         });
     };
-
     useEffect(() => {
         const handleZoom = () => {
             setZoom(map.getZoom());
@@ -69,6 +74,7 @@ export const MapObjects = () => {
                         isGeometryEditMode ? handlePolygonChange : undefined,
                     );
                 })()}
+
             {!isGeometryEditMode &&
                 proxyGeoObjects.map((proxy) => {
                     if (!proxy.geometry) return null;
@@ -91,6 +97,8 @@ export const MapObjects = () => {
     );
 };
 
+/** Возвращает соответствующий Leaflet-элемент для геометрии
+ * (учитывает выделение/зум/цвета/редактирование) */
 const getGeometryComponent = (
     object: GeoObject | ProxyGeoSystemSummary,
     geometry: GeometryGeoJSON,
@@ -103,13 +111,11 @@ const getGeometryComponent = (
 ): JSX.Element | null => {
     const { type, coordinates } = geometry;
 
-    console.log(type);
-
     const isZoomed = zoomedObject?.id === object.id;
 
+    // масштабирование визуальных параметров от уровня зума
     const sizeMultiplier = Math.max(1, zoom / 12);
     let sizeMultiplierForRadius = 18;
-
     if (zoom >= 16) sizeMultiplierForRadius = zoom;
     else if (zoom > 13 && zoom < 16) sizeMultiplierForRadius = zoom / 3;
     else sizeMultiplierForRadius = zoom / 10;
@@ -131,11 +137,8 @@ const getGeometryComponent = (
     const commonProps = {
         eventHandlers: {
             click: () => {
-                if (isSelected) {
-                    mapObjectsModel.removeSelectedGeoobject();
-                } else {
-                    mapObjectsModel.setSelectedGeoobject(object);
-                }
+                if (isSelected) mapObjectsModel.removeSelectedGeoobject();
+                else mapObjectsModel.setSelectedGeoobject(object);
             },
         },
         key: updateKey,
@@ -161,13 +164,10 @@ const getGeometryComponent = (
             return (
                 <Circle {...commonProps} radius={radius} center={coordinates} />
             );
-
         case 'PolyLine':
             return <Polyline {...commonProps} positions={coordinates} />;
-
         case 'Polygon':
             return <Polygon {...commonProps} positions={coordinates} />;
-
         case 'MultiPolygon':
             return (
                 <LayerGroup key={updateKey}>
@@ -176,7 +176,6 @@ const getGeometryComponent = (
                     ))}
                 </LayerGroup>
             );
-
         default:
             return null;
     }

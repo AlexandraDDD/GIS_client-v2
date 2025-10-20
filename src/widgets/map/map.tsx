@@ -12,7 +12,7 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 
-import { mapModel } from '../../entities/map';
+import { mapModel } from '../../features/map';
 import { geoObjectModel, getGeometry } from '../../entities/geoobject';
 import { InfoPlate } from '../../features/info-plate';
 /* import { Aspects, NewAspectForm } from '../../features/aspects'; */
@@ -80,7 +80,7 @@ export const Map = () => {
     const isClipping = useUnit(mapModel.$isClippingMode);
 
     useMount(() => {
-        geoObjectModel.getGeoObject();
+        geoObjectModel.getAvailableGeoObjects();
     });
 
     return (

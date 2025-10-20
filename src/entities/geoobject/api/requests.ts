@@ -1,25 +1,20 @@
 import { get, patch } from '../../../shared/lib/fetch';
-import type {
-    GeometryGeoJSON,
-    GeoObject,
-    GeoObjectGeometryPatch,
-} from '../model/types';
-import mockGeoObject from '../../../mockdata/geosystemmock.json';
+import type { GeoObject, GeoObjectGeometryPatch } from '../model/types';
 
-export const getDeafaultGeoObjectRequest = async () => {
-    const data = await get<GeoObject>(
-        '/api/GeoSystem/35545d45-284a-46ed-9bd5-33d8d30c78aa',
-    );
+//Получение всех геосистем как временное решение для возможности начала работы
+export const getAvailableGeoObjectRequest = async () => {
+    const data = await get<GeoObject[]>('/api/GeoSystem');
+
+    return data;
+};
+//Получение одной геосистемы
+export const getGeoObjectRequest = async (id: string) => {
+    const data = await get<GeoObject>(`/api/GeoSystem/${id}`);
+
     return data;
 };
 
-//запрос за моковыми данными
-export const getGeoObjectsMockRequest = async (): Promise<GeoObject> => {
-    return mockGeoObject;
-};
-
-// ИЗМЕНЕНИЕ
-
+// PATCH изменение геометрии геосистемы
 export const patchGeoSystemGeometry = async (
     geoObject: GeoObjectGeometryPatch,
 ) => {
@@ -28,3 +23,9 @@ export const patchGeoSystemGeometry = async (
     });
     return data;
 };
+
+//запрос за мок данными
+/* export const getGeoObjectsMockRequest = async (): Promise<GeoObject> => {
+    return mockGeoObject;
+};
+ */

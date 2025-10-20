@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Map } from '../../widgets/map';
 import { bem } from '../../shared/lib';
 import { Page } from '../../shared/ui/page';

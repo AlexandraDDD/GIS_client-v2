@@ -1,16 +1,14 @@
 import type { LatLngTuple } from 'leaflet';
 
+/** Базовый тип для объектов редактора (черновая геометрия) */
+
 interface Obj {
-    /**
-     * _id - только фронтовый, бэк создает свои.
-     * В сохраненных геообьектах работаем с их id
-     */
+    /** Локальный id (генерируется на фронте, у сохранённых объектов используется id с бэка) */
     _id: string;
 
-    /** Выбран ли обьект */
     selected?: boolean;
 
-    /** Может быть выбран, но не может быть удален */
+    /** Только для чтения — нельзя удалить, но можно выделить */
     readonly?: boolean;
 }
 
@@ -29,4 +27,5 @@ export interface EditorPolyLine extends Obj {
     coordinates: LatLngTuple[];
 }
 
+/** Объединённый тип всех объектов редактора */
 export type EditorObject = EditorPoint | EditorPolyLine | EditorPolygon;

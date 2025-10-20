@@ -2,28 +2,23 @@ import { createStore, sample, createEvent } from 'effector';
 import { nanoid } from 'nanoid';
 
 import type { EditorObject, EditorPoint } from './types';
-import { GeoObject, geoObjectModel, getGeometry } from '../../../entities/geoobject';
-import { mapModel } from '../../../entities/map';
+import { GeoObject } from '../../../entities/geoobject';
 
+/** Стор всех редакторских объектов по _id */
 const $objects = createStore<Record<EditorObject['_id'], EditorObject>>({});
+/** Вычисляемый список выбранных объектов */
 const $selectedObjects = sample({
     clock: $objects,
     fn: (objects) => Object.values(objects).filter(({ selected }) => selected),
 });
 
-// Хранилище для текущего объекта клиппирования
+/** Текущий объект для клиппирования (или null) */
 const $clippedObject = createStore<GeoObject | null>(null);
-
-// Событие для добавления текущего объекта клиппирования
+/** Установка текущего объекта клиппирования */
 const setClippedObject = createEvent<GeoObject | null>();
+sample({ clock: setClippedObject, target: $clippedObject });
 
-// Обработка установки текущего приближенного объекта
-sample({
-    clock: setClippedObject,
-    target: $clippedObject,
-});
-
-/** Добавить обьект по координатам */
+/** Добавить объект (генерирует _id) */
 const addObject = createEvent<Omit<EditorObject, '_id'>>();
 sample({
     clock: addObject,
@@ -37,41 +32,41 @@ sample({
             selected: selected ?? true,
             readonly: readonly ?? false,
         };
-
         return { ...objects, [newObject._id]: newObject };
     },
     target: $objects,
 });
 
-/** Добавить/убрать выделение обьекту по _id */
+/** Переключить выделение объекта по _id */
 const toggleObjectSelect = createEvent<EditorObject['_id']>();
 sample({
     clock: toggleObjectSelect,
     source: $objects,
     fn: (objects, _id) => {
         const object = objects[_id];
-
-        return { ...objects, [object._id]: { ...object, selected: !object.selected } };
+        return {
+            ...objects,
+            [object._id]: { ...object, selected: !object.selected },
+        };
     },
     target: $objects,
 });
 
-/** Удалить обьект */
+/** Удалить объект по _id (если не readonly) */
 const deleteObject = createEvent<EditorObject['_id']>();
 sample({
     clock: deleteObject,
     source: $objects,
-    filter: (objects, _id) => !objects[_id]?.readonly, // проверяем что его можно удалить
+    filter: (objects, _id) => !objects[_id]?.readonly,
     fn: (objects, _id) => {
-        const copiedPoints = { ...objects };
-        delete copiedPoints[_id];
-
-        return copiedPoints;
+        const copied = { ...objects };
+        delete copied[_id];
+        return copied;
     },
     target: $objects,
 });
 
-/** Обьединить выбранные точки в линию или полигон */
+/** Объединить выбранные точки в линию/полигон */
 const unitePointsTo = createEvent<Exclude<EditorObject['type'], 'Point'>>();
 sample({
     clock: unitePointsTo,
@@ -80,12 +75,15 @@ sample({
         const selectedPoints = Object.values(selectedObjects).filter(
             (object): object is EditorPoint => object.type === 'Point',
         );
-
-        return { type, coordinates: selectedPoints.map(({ coordinates }) => coordinates) };
+        return {
+            type,
+            coordinates: selectedPoints.map(({ coordinates }) => coordinates),
+        };
     },
     target: addObject,
 });
 
+/** Публичный API модели редактора объектов */
 export const editorModel = {
     $objects,
     $selectedObjects,
@@ -101,11 +99,11 @@ export const editorModel = {
 };
 
 /**
- * Когда загрузились сохраненные обьекты или переключилась настройка,
- * то на углах полигонов и линий ставим точки для создания границ
+ * Когда загрузились сохраненные объекты или переключилась настройка,
+ * можно расставлять служебные точки по углам (пример ниже отключён).
  */
 
-/*  sample({
+/* sample({
     clock: [mapModel.$editorPointsOnCorners, geoObjectModel.$geoObject],
     source: {
         editorPointsOnCorners: mapModel.$editorPointsOnCorners,
@@ -115,14 +113,14 @@ export const editorModel = {
     fn: ({ objects, geoobjects, editorPointsOnCorners }) => {
         const newObjects: Record<EditorObject['_id'], EditorObject> = {};
 
-       //  Убираем предыдущие ридонли элементы 
+        // Убираем предыдущие несистемные элементы
         Object.values(objects).forEach((object) => {
             if (!object.readonly) {
                 newObjects[object._id] = object;
             }
         });
 
-      //   И добавляем новые если надо
+        // Добавляем новые точки по углам при включённой настройке
         if (editorPointsOnCorners) {
             geoobjects.forEach((geoobject) => {
                 const geometry = getGeometry(geoobject);
@@ -140,7 +138,6 @@ export const editorModel = {
                             selected: false,
                             readonly: true,
                         };
-
                         newObjects[newObject._id] = newObject;
                     });
                 }
@@ -150,5 +147,4 @@ export const editorModel = {
         return newObjects;
     },
     target: $objects,
-}); 
- */
+}); */
